@@ -1,0 +1,305 @@
+---
+title: "Head First - Análise de Dados"
+author: "Marcelo Muzlli"
+date: "Novembro de 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      error = FALSE, 
+                      warning = FALSE, 
+                      fig.width = 12, 
+                      fig.height = 8)
+```
+
+***
+# Capítulo 9
+
+```{r employees09}
+# Obtém do arquivo CSV e o joga em uma variável (Dataset)
+employees09 <- read.csv("../Data/ucad_cap09_empregados_R.csv", header=TRUE)
+attach(employees09)
+```
+
+**Mostra a estatística resumida da coluna Recebido no Dataset**
+```{r employees09 estatistica resumida}
+summary(Recebido)
+```
+
+**Demonstra o aumento médio Recebido no Dataset**
+```{r employees09 aumento medio}
+sd(Recebido)
+``` 
+
+**Lista a estrutura do Dataset**
+```{r employees09 estrutura Dataset}
+str(employees09)
+```
+
+*Plota o Historgrama*
+```{r employees09 histograma 1}
+hist(Recebido, breaks = 50, 
+     ylab = "Frequência - Num. de Funcionários", 
+     xlab = "% Recebido", 
+     main = "Histograma de empregados - Frequência X % Recebido")
+```
+
+*Plota o Historgrama - Ano 2007*
+```{r employees09 histograma 2}
+hist(Recebido[Ano ==2007], breaks = 50, 
+     ylab = "Frequência - Num. de Funcionários", 
+     xlab = "% Recebido", 
+     main = "Histograma de empregados - Frequência X % Recebido (2007)")
+```
+
+*Divisão do Histograma em Subconjuntos - Classificando somente para o ano de 2008*
+```{r employees09 histograma 3}
+hist(Recebido[Ano ==2008], breaks = 50, 
+     ylab = "Frequência - Num. de Funcionários", 
+     xlab = "% Recebido", 
+     main = "Histograma de empregados - Frequência X % Recebido (2008)")
+```
+
+*Divisão do Histograma em Subconjuntos - Classificando somente para as Mulheres*
+```{r employees09 histograma 4}
+hist(Recebido[Sexo == 'F'], breaks = 50, 
+     ylab = "Frequência - Num. de Funcionários", 
+     xlab = "% Recebido", 
+     main = "Histograma de empregados - Frequência X % Recebido (Mulheres)")
+```
+
+*Divisão do Histograma em Subconjuntos - Classificando somente para os Homens*
+```{r employees09 histograma 5}
+hist(Recebido[Sexo == 'M'], breaks = 50, 
+     ylab = "Frequência - Num. de Funcionários", 
+     xlab = "% Recebido", 
+     main = "Histograma de empregados - Frequência X % Recebido (Homens)")
+```
+
+*Divisão do Histograma em Subconjuntos - Classificando somente para os não negocioado*
+```{r employees09 histograma 6}
+densidade_valor_nao_negociado <- density(Recebido[Negociado == 'FALSO'])
+```
+
+Nota-se o uso do parâmetro 'probability', que estabelece que os valores do histograma 
+   serão definidos de forma a que a área total das suas barras some 1. 
+Esta alteração é necessária para normalizar os valores, sendo assim, comparáveis com os 
+   gerados pela função 'densidade_valor_nao_negociado' acima.
+   
+```{r employees09 histograma 7}
+hist(Recebido[Negociado == 'FALSO'], breaks = 50, 
+     ylab = "Frequência - Num. de Funcionários", 
+     xlab = "% Recebido", 
+     main = "Histograma de empregados - Frequência X % Recebido (Negociado)",
+     xlim = range(densidade_valor_nao_negociado$x),
+     ylim = c(0, 0.6),
+     probability = T,
+     col = "blue")
+
+lines(densidade_valor_nao_negociado, lw = 2)
+```
+   
+Resultado Finais
+
+```{r}
+summary(Recebido[Negociado == 'VERDADEIRO'])
+sd(Recebido[Negociado == 'VERDADEIRO'])
+```
+
+***
+
+# Capítulo 10
+
+### Regressão Linear
+*função lm()*
+
+```{r employees}
+employees <- read.csv("../Data/ucad_cap10_empregados.csv", header=TRUE)
+```
+
+**Demonstra os 30 primeiros registros do arquivo CSV**
+```{r employees primeiros30}
+head(employees,n=30)
+```
+
+**Descrição da funçao de Regressão Linear**
+
+~~~~
+y = a + (b * x), onde a = intercepção e b = inclinação 
+ y = Aumento Recebido 
+ x = Aumento Solicitado
+~~~~
+
+~~~~
+Inclinação da Linha = coeficiente de correlação multiplicado pelo desvio padrão de y, dividido pelo desvio padrão de x
+ Fórmula = Valor Dependente (Y) ~ Valor Independente (X)
+~~~~
+```{r employees regressao linear}
+myLm <- lm(employees$received[employees$negotiated==TRUE] ~ employees$requested[employees$negotiated==TRUE],
+           data = employees)
+
+
+coeficiente                  <- myLm$coefficients
+vlr_estimado_nas_observacoes <- myLm$fitted.values
+
+# Exibe o gráfico de Dispersão
+plot(employees$requested[employees$negotiated==TRUE],
+     employees$received[employees$negotiated==TRUE],
+     xlab = "Solicitado",
+     ylab = "Recebido",
+     main = "Gráfico de Dispersão: Recebido X Solicitado")
+
+# Desenha a linha da Regressão Linear no gráfico 
+lines(employees$requested[employees$negotiated==TRUE], vlr_estimado_nas_observacoes, lwd = 5)
+
+# Calcula o Coeficiente de Correlação dos dados
+cor_correlacao <- cor(employees$requested[employees$negotiated==TRUE],
+                      employees$received[employees$negotiated==TRUE])
+```
+
+*Imprime o Valor possivel de um aumento esperado onde a porcentam de aumento será de 05%*
+```{r Valor Percentual Possivel Aumento}
+#   my_raise = Valor (em %) solicitado
+my_raise <- 5
+
+vlr_intercept  <- coeficiente["(Intercept)"] 
+vlr_inclinacao <- coeficiente["employees$requested[employees$negotiated == TRUE]"] 
+
+vlr_perc_possivel_aumento <- vlr_intercept + vlr_inclinacao * my_raise
+
+print (vlr_perc_possivel_aumento)
+```
+
+```{r Calculo do RMS - Novas Linhas de Regressao}
+# Calcula o desvio padrão para 02 valores (Minimo e Maximo), considerando para valores > 10 e <= 10
+myLmBig   <- lm(employees$received[employees$negotiated==TRUE & employees$requested > 10] ~ 
+                employees$requested[employees$negotiated==TRUE & employees$requested > 10],
+                data = employees)
+
+myLmSmall <- lm(employees$received[employees$negotiated==TRUE & employees$requested <= 10] ~ 
+                employees$requested[employees$negotiated==TRUE & employees$requested <= 10],
+                data = employees)
+
+```
+
+*Margem de Erro (RMS - Desvio Padrão) do Modelo Principal*
+```{r Desvio Padrao - Modelo Principal}
+paste(round(summary(myLm)$sigma, 2), "%")
+```
+
+*Margem de Erro (RMS - Desvio Padrão) dos Modelos Small e Big*
+```{r Desvio Padrao - Novas Linhas de Regressao}
+paste("Small: ", round(summary(myLmSmall)$sigma, 2), "%")
+paste("Big: ", round(summary(myLmBig)$sigma, 2), "%")
+```
+
+***
+
+# Capítulo 12
+
+```{r Analise de Vendas - Cap 12}
+dispatch <- read.csv("../Data/AnaliseVendas_cap12.csv", header=TRUE)
+plot(Sales~jitter(Article.count), data=dispatch,
+     xlab = "Quantidade Vendida",
+     ylab = "Vendas",
+     main = "Gráfico de Dispersão: Vendas X Quantidade")
+
+```
+
+```{r Grafico de Dispersao - Comentario agrupado por Autor}
+articleHitsComments <- read.csv("../Data/ucad_cap12_artigoCliqueComenta.csv", header=TRUE)
+
+# Carrega a biblioteca lattice para ser utilizado na plotagem abaixo
+library(lattice)
+
+# Essa disposição de gráficos de dispersão mostra os cliques e comentários de cada artigo, agrupados por autor
+xyplot(webHits ~ commentCount | authorName, 
+       data = articleHitsComments,
+       xlab = "Quantidade de Comentários",
+       ylab = "Cliques",
+       main = "Gráfico de Dispersão: WebHits X Quantidade de Comentários")
+```
+
+### Análise do **Gráfico de Dispersão** acima
+Está bem claro que a autora *Rafaela Cortez* acima mostrado no gráfico de dispersão tem o melhor desempenho.
+Todos os artigos que ela escreveu tem pelo menos 3.000 cliques e muito deles apresentam mais de 20 comentários. Parece que as pessoas gostam muito dela.
+
+E com relação aos outros autores, alguns deles (como *Destiny* e *Nicole*) parecem se sair melhor que o restante. 
+O *Niko* tem uma grande disseminação no desempenho, enquanto *Brewster* e *Jason* não são populares.
+
+***
+
+# Capítulo 13
+### Data Wrangling
+
+#### Limpeza de Registros Duplicados em um Dataset e remoção de colunas não necessárias
+
+```{r - Cap 13}
+
+# Obtém do arquivo CSV e o joga em uma variável (Dataset)
+hfhh <- read.csv("../Data/ucad_cap13_dados_para_R.csv", header=TRUE)
+```
+
+#### Antes
+
+Mostra as 10 Primeiras Linhas do Dataset antes da limpeza (registros duplicados e todas as colunas)
+
+```{r Dataset Before}
+
+head(hfhh, n=10)
+
+```
+
+```{r Limpeza de Dados Nome}
+# Expressão Regular para limpeza do nome: 
+#  O parênteses da esquerda (as barras invertidas são caracteres de que dizem ao R que o parêntese em si não é uma expressão do R).
+#     \\(
+#     .* = Tudo do meio
+#     \\) 
+newLastName <- sub("\\(.*\\)", "", hfhh$LastName)
+
+#head(newLastName)
+
+# Zera o valor do Dataset
+hfhh$LastName <- NULL
+
+# Substitui o Valor com o Novo Valor
+hfhh["LastName"] <- newLastName
+```
+
+```{r Ordena Dados}
+# Ordena o Dataset pelo campo PersonID
+hfhhSorted <- hfhh[order(hfhh$PersonID), ]
+```
+
+```{r Limpeza de Dados}
+# Copia o Dataset ordenado para um outro Dataset onde será removido dados duplicados
+hfhhNamesOnly <- hfhhSorted
+
+# Exclui colunas nao necessárias
+hfhhNamesOnly$CallID <- NULL
+hfhhNamesOnly$Time   <- NULL
+
+# Remove Duplicados
+hfhhNamesOnly <- unique(hfhhNamesOnly)
+```
+
+#### Depois
+
+Mostra as 10 Primeiras Linhas do Dataset totalmente limpo (sem registros duplicados e remoção de colunas não necessárias)
+
+```{r Dataset After}
+
+head(hfhhNamesOnly, n=10)
+
+```
+
+_Grava_ o Dataset em novo arquivo CSV: ucad_cap13_dados_para_R_nduplicado.csv
+
+```{r Grava Dataset}
+# Grava o CSV
+write.csv(hfhhNamesOnly, file="../Data/ucad_cap13_dados_para_R_nduplicado.csv")
+
+```
